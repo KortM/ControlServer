@@ -2,20 +2,13 @@ using namespace System.Collections.Generic;
 try {
     $config_file = Get-Content 'config.ini' | Select-Object -Skip 1 | ConvertFrom-StringData
     $schedule_db = Get-Content 'schedule.json' | Select-Object | ConvertFrom-Json
+    $schedule_pid = 0
 }
 catch {
     Write-Output "Not found configuration files: config.ini and schedule.json"
 }
 function main() {
-    if (check_running) {
-        #TODO
-        Write-Output "Script is running! Canceled.";
-        send_mail;
-        return
-    }
-    else {
-        loop;
-    }
+    loop;
 }
 function send_mail {
     Write-Output "Sending email notification..."
@@ -26,13 +19,57 @@ function send_mail {
         Write-Output "Error sending email message!"
     }
 }
-function check_running {
-    return $false
+function StopSchedule{
+    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $schedule_pid = $file_PID.ReadLine()
+    $file_PID.Close()
+    $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
+    try {
+        $p_proc.Kill()
+        Write-Host "Schedule running canceled!" -ForegroundColor Yellow
+    }
+    catch {
+        Write-Host "Schedule is not running" -ForegroundColor Red
+    }
 }
-function CheckRebootState {
-    #TODO 
-    foreach ($val in $reboot_running) {
-        Write-Output $val
+function Status{
+    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $schedule_pid = $file_PID.ReadLine()
+    $file_PID.Close()
+    $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
+    if ($p_proc)
+    {
+        Write-Host "Shedule is running" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "Schedule is not running" -ForegroundColor Red
+    }
+}
+function check_running {
+    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $schedule_pid =  $file_PID.ReadLine()
+    $file_PID.Close()
+    $pr = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
+    if ($pr)
+    {
+        return $true
+    }else
+    {
+        return $false
+    }
+}
+function StartSchedule{
+    if (check_running)
+    {
+        Write-Host "Schedule state is running! Not start new proccess" -ForegroundColor Red
+        send_mail;
+    }
+    else
+    {
+        $schedule_process =  Start-Process powershell -ArgumentList ".\hanlder.ps1" -PassThru -WindowStyle Hidden
+        Write-Output $schedule_process.Id | Out-File ".\PID.txt" 
+        Write-Host "Schedule state is running" -ForegroundColor Green
     }
 }
 function ListHosts {
@@ -57,7 +94,6 @@ function ListHosts {
     #$db.hosts | Format-Table -AutoSize;
 }
 function addHost {
-    #TODO
     param (
         $h,
         $time_reboot_day,
@@ -66,10 +102,9 @@ function addHost {
         $drain_mode,
         $time_drain
     )
+    Write-Host "Coount "
     $date = Get-Date -Day $time_reboot_day -Hour $time_reboot_hour -Minute $time_reboot_minute
-    #Write-Output $date.AddHours(-$time_drain)
-    
-    $new_host = @{
+    $schedule_db.hosts += @{
         Name             = $h
         TimeRebootDay    = $time_reboot_day
         TimeRebootHour   = $time_reboot_hour
@@ -80,7 +115,6 @@ function addHost {
         DrainModeMinute  = $date.AddHours(-$time_drain).Minute
         RunningState     = $true
     }
-    $schedule_db.hosts += $new_host
     $schedule_db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
 }
 function deleteHost {
@@ -92,13 +126,24 @@ function deleteHost {
     if ($check)
     {
         $db.hosts = $db.hosts | Where-Object { $_.Name -ne $h }
-        Write-Output $db.hosts
-        $db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
-        Write-Output "Delete success!"
+        if ($db.hosts.Length -le 1)
+        {
+            $db.hosts = @()
+            Write-Output $db.hosts
+            $db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
+            Write-Host "Delete success!" -ForegroundColor Green
+        }
+        else
+        {
+            Write-Output $db.hosts
+            $db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
+            Write-Host "Delete success!" -ForegroundColor Green
+        }
+        
     }
     else
     {
-        Write-Output "No host in the list: $h"
+        Write-Host "No host in the list: $h" -ForegroundColor Red
     }
     
 }
@@ -110,10 +155,12 @@ function loop {
 1: Delete host from schedule
 2: List Hosts
 3: Status
-4: Exit
+4: Start schedule
+5: Stop schedule
+6: Exit
 -----------------
 "
-        if ($key -eq 4) {
+        if ($key -eq 6) {
             return
         }
         if ($key -eq 0) {
@@ -133,7 +180,7 @@ function loop {
                 addHost -h $h -time_reboot_day $time_reboot_day -time_reboot_hour $time_reboot_hour -time_reboot_minute $time_reboot_minute -drain_mode $drain -time_drain $time_drain
             }
             else {
-                Write-Output "Failed add host to scheduler! All parameters not specified!"
+                Write-Host "Failed add host to scheduler! All parameters not specified!" -ForegroundColor Red
                 continue
             }
         }
@@ -142,12 +189,24 @@ function loop {
             if ($h.Length -gt 0) {
                 deleteHost($h)
             }
+            else
+            {
+                Write-Host "Not valid input" -ForegroundColor Red
+            }
         }
         if ($key -eq 2) {
             ListHosts;
         }
         if ($key -eq 3) {
-            Write-Output $job
+            Status;
+        }
+        if ($key -eq 4)
+        {
+            StartSchedule;
+        }
+        if ($key -eq 5)
+        {
+            StopSchedule;
         }
     }
 }
