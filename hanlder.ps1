@@ -1,4 +1,9 @@
+function CheckHostStatus{
+    #TODO
+    #Нужно реализовать функцию проверки доступности хоста после перезапуска
+}
 function ProcessScheduler {
+    #Обработчик хостов на перезагрузку и включения drain mode
     Write-Output "Proccess"
 
     while ($true)

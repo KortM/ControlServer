@@ -8,9 +8,11 @@ catch {
     Write-Output "Not found configuration files: config.ini and schedule.json"
 }
 function main() {
+    #Главная функция, с нее начинается запуск
     loop;
 }
 function send_mail {
+    #Отправка почтовых уведомлений о событиях
     Write-Output "Sending email notification..."
     try {
         Send-MailMessage -From $config_file.email -To $config_file.recepients -Subject "Reboot Script" -SmtpServer $config_file.server
@@ -20,6 +22,7 @@ function send_mail {
     }
 }
 function StopSchedule{
+    #Фукция убивает процесс мониторинга хостов на перезагрузку и drain Mode
     $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
@@ -33,6 +36,7 @@ function StopSchedule{
     }
 }
 function Status{
+    #Функция показывает статус процесса из интерфейса пользователя
     $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
@@ -47,6 +51,8 @@ function Status{
     }
 }
 function check_running {
+    #Функция показывает статус процесса при запуске
+    #Используется как дополнительный инструмент контроля
     $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
     $schedule_pid =  $file_PID.ReadLine()
     $file_PID.Close()
@@ -60,6 +66,8 @@ function check_running {
     }
 }
 function StartSchedule{
+    #Запуск процесса со скриптом handler.ps1
+    #В скрипте находится обработчик перезагрузки хостов и draib mode
     if (check_running)
     {
         Write-Host "Schedule state is running! Not start new proccess" -ForegroundColor Red
@@ -73,7 +81,7 @@ function StartSchedule{
     }
 }
 function ListHosts {
-    #TODO
+    #Функция показывает список хостов из файла schedule.json
     Write-Output "List host:"
     $db = Get-Content -Path ".\schedule.json" -Raw | ConvertFrom-Json
     $hosts = [System.Collections.ArrayList]::new()
@@ -94,6 +102,7 @@ function ListHosts {
     #$db.hosts | Format-Table -AutoSize;
 }
 function addHost {
+    #Добавляем новый хост в файл для обработки
     param (
         $h,
         $time_reboot_day,
@@ -118,6 +127,7 @@ function addHost {
     $schedule_db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
 }
 function deleteHost {
+    #Функция удаления хоста из списка для обработки
     param (
         $h
     )
@@ -148,7 +158,9 @@ function deleteHost {
     
 }
 function loop {
-
+    #   
+    #   Пользовательский интерфейс  
+    # 
     while ($true) {
         $key = Read-Host "-----------------
 0: Add host to schedule
