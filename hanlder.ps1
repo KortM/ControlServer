@@ -1,14 +1,11 @@
-function CheckHostStatus{
-    #TODO
-    #Нужно реализовать функцию проверки доступности хоста после перезапуска
-}
+
 function ProcessScheduler {
     #Обработчик хостов на перезагрузку и включения drain mode
     Write-Output "Proccess"
 
     while ($true)
     {
-        $schedule_db = Get-Content 'schedule.json' | Select-Object | ConvertFrom-Json
+        $schedule_db = Get-Content '.\schedule.json' | Select-Object | ConvertFrom-Json
         $date = Get-Date
         $day = $date.Day
         $hour = $date.Hour 
@@ -29,7 +26,7 @@ function ProcessScheduler {
                     $schedule_db.DrainMode += @{
                         Name = $val.Name
                     }
-                    $schedule_db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
+                    $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
             }
             if (($val.RunningState) -and ($val.TimeRebootHour -eq $hour) -and ($val.TimeRebootMinute -eq $minute) -and ($val.TimeRebootDay -eq $day)) {
@@ -46,7 +43,7 @@ function ProcessScheduler {
                     $schedule_db.Reboot += @{
                         Name = $val.Name
                     }
-                    $schedule_db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
+                    $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
             }
         }

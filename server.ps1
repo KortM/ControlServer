@@ -11,7 +11,7 @@ function main() {
     #Главная функция, с нее начинается запуск
     loop;
 }
-function send_mail {
+function SendMail {
     #Отправка почтовых уведомлений о событиях
     Write-Output "Sending email notification..."
     try {
@@ -71,7 +71,7 @@ function StartSchedule{
     if (check_running)
     {
         Write-Host "Schedule state is running! Not start new proccess" -ForegroundColor Red
-        send_mail;
+        SendMail;
     }
     else
     {
