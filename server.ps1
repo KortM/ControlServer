@@ -1,7 +1,7 @@
 using namespace System.Collections.Generic;
 try {
     $config_file = Get-Content 'config.ini' | Select-Object -Skip 1 | ConvertFrom-StringData
-    $schedule_db = Get-Content 'schedule.json' | Select-Object | ConvertFrom-Json
+    #$schedule_db = Get-Content 'schedule.json' | Select-Object | ConvertFrom-Json1
     $schedule_pid = 0
 }
 catch {
@@ -82,23 +82,33 @@ function StartSchedule{
 }
 function ListHosts {
     #Функция показывает список хостов из файла schedule.json
-    Write-Output "List host:"
     $db = Get-Content -Path ".\schedule.json" -Raw | ConvertFrom-Json
     $hosts = [System.Collections.ArrayList]::new()
     foreach ($val in $db.hosts)
     {
-        $drain_date = Get-Date -Hour $val.DrainModeHour -Day $val.DrainModeDay -Minute $val.DrainModeMinute
-        $reboot_date = Get-Date -Hour $val.TimeRebootHour -Day $val.TimeRebootDay -Minute $val.TimeRebootMinute
-        $drain_mode = $val.DrainMode
+        if ($val)
+        {
+            $drain_date = Get-Date -Hour $val.DrainModeHour -Day $val.DrainModeDay -Minute $val.DrainModeMinute -Second 0
+            $reboot_date = Get-Date -Hour $val.TimeRebootHour -Day $val.TimeRebootDay -Minute $val.TimeRebootMinute -Second 0
+            $drain_mode = $val.DrainMode
 
-        $hosts.Add(@{
-            Host = $val.Name
-            TimeReboot = $reboot_date
-            DrainMode = $drain_mode
-            DrainModeTime = $drain_date
+            $hosts.Add(@{
+                Host = $val.Name
+                TimeReboot = $reboot_date
+                DrainMode = $drain_mode
+                DrainModeTime = $drain_date
         })
+        }
+        
     }
-    $hosts | Format-Table -AutoSize;
+    Write-Output "List host: $($hosts.Count) count."
+    Write-Output "*****************" 
+    foreach ($val in $hosts)
+    {
+        Write-Output $val
+        Write-Output "********************************"
+    }
+    #$hosts | Format-Table -AutoSize;
     #$db.hosts | Format-Table -AutoSize;
 }
 function addHost {
@@ -111,7 +121,7 @@ function addHost {
         $drain_mode,
         $time_drain
     )
-    Write-Host "Coount "
+    $schedule_db = Get-Content '.\schedule.json' | Select-Object | ConvertFrom-Json
     $date = Get-Date -Day $time_reboot_day -Hour $time_reboot_hour -Minute $time_reboot_minute
     $schedule_db.hosts += @{
         Name             = $h
@@ -124,7 +134,7 @@ function addHost {
         DrainModeMinute  = $date.AddHours(-$time_drain).Minute
         RunningState     = $true
     }
-    $schedule_db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
+    $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
 }
 function deleteHost {
     #Функция удаления хоста из списка для обработки
@@ -136,24 +146,20 @@ function deleteHost {
     if ($check)
     {
         $db.hosts = $db.hosts | Where-Object { $_.Name -ne $h }
-        if ($db.hosts.Length -le 1)
-        {
-            $db.hosts = @()
-            Write-Output $db.hosts
-            $db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
-            Write-Host "Delete success!" -ForegroundColor Green
-        }
-        else
-        {
-            Write-Output $db.hosts
-            $db | ConvertTo-Json -Depth 100 | Out-File "schedule.json"
-            Write-Host "Delete success!" -ForegroundColor Green
-        }
+        Write-Output $db.hosts
+        $db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
+        Write-Host "Delete success!" -ForegroundColor Green
         
     }
     else
     {
         Write-Host "No host in the list: $h" -ForegroundColor Red
+    }
+    if ($db.hosts.Count -eq 0)
+    {
+        Write-Output "Object in collection"
+        $db.hosts += New-Object string[] 1
+        $db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
     }
     
 }
