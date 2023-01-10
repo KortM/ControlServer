@@ -1,6 +1,6 @@
 using namespace System.Collections.Generic;
 try {
-    $config_file = Get-Content 'config.ini' | Select-Object -Skip 1 | ConvertFrom-StringData
+    $config_file = Get-Content '.\config.ini' | Select-Object -Skip 1 | ConvertFrom-StringData
     #$schedule_db = Get-Content 'schedule.json' | Select-Object | ConvertFrom-Json1
     $schedule_pid = 0
 }
