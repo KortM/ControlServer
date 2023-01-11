@@ -23,7 +23,7 @@ function SendMail {
 }
 function StopSchedule{
     #Фукция убивает процесс мониторинга хостов на перезагрузку и drain Mode
-    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $file_PID = New-Object System.IO.StreamReader{.\Schedule_PID.txt}
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
     $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
@@ -37,7 +37,7 @@ function StopSchedule{
 }
 function Status{
     #Функция показывает статус процесса из интерфейса пользователя
-    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $file_PID = New-Object System.IO.StreamReader{.\Schedule_PID.txt}
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
     $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
@@ -53,7 +53,7 @@ function Status{
 function check_running {
     #Функция показывает статус процесса при запуске
     #Используется как дополнительный инструмент контроля
-    $file_PID = New-Object System.IO.StreamReader{.\PID.txt}
+    $file_PID = New-Object System.IO.StreamReader{.\Schedule_PID.txt}
     $schedule_pid =  $file_PID.ReadLine()
     $file_PID.Close()
     $pr = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
@@ -76,7 +76,7 @@ function StartSchedule{
     else
     {
         $schedule_process =  Start-Process powershell -ArgumentList ".\hanlder.ps1" -PassThru -WindowStyle Hidden
-        Write-Output $schedule_process.Id | Out-File ".\PID.txt" 
+        Write-Output $schedule_process.Id | Out-File ".\Schedule_PID.txt" 
         Write-Host "Schedule state is running" -ForegroundColor Green
     }
 }

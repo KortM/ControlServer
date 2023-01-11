@@ -21,10 +21,17 @@ function ProcessScheduler {
                 }
                 else {
                     Write-Output "Time to enable DrainMode"
-                    #Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed No -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"
-                    #[void]$drain_running.Add($val.Name)
-                    $schedule_db.DrainMode += @{
+                    try {
+                        
+                    }
+                    catch {
+                        <#Do this if a terminating exception happens#>
+                    }
+                    
+                    Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed No -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"
+                    $schedule_db.Reboot += @{
                         Name = $val.Name
+                        DrainMode = $true
                     }
                     $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
@@ -34,7 +41,7 @@ function ProcessScheduler {
                 #Если запустили перезагрузку, то добавляем в список для дальнейшего контроля
                 $check = $schedule_db.Reboot | Where-Object { $_.Name -eq $val.Name }
                 if ($check) {
-                    #TODO Нужно реализовать функцию проверки доступности после перезагрузки
+                    #Функция проверки доступности после перезагрузки вынесена в отдельный модуль check_status.ps1
                     continue
                 }
                 else {
@@ -42,6 +49,7 @@ function ProcessScheduler {
                     #Restart-Computer -ComputerName $val.Name -Force; Start-Sleep -Seconds
                     $schedule_db.Reboot += @{
                         Name = $val.Name
+                        DrainMode = $false
                     }
                     $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
