@@ -22,16 +22,14 @@ function ProcessScheduler {
                 else {
                     Write-Output "Time to enable DrainMode"
                     try {
-                        
+                        #Отключаем возможность подключения к RDP (DrainMode Off)
+                        Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed No -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"   
                     }
                     catch {
-                        <#Do this if a terminating exception happens#>
+                        Write-Output "Failed to disable DrainMode!"
                     }
-                    
-                    Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed No -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"
-                    $schedule_db.Reboot += @{
+                    $schedule_db.DrainMode += @{
                         Name = $val.Name
-                        DrainMode = $true
                     }
                     $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
@@ -49,13 +47,12 @@ function ProcessScheduler {
                     #Restart-Computer -ComputerName $val.Name -Force; Start-Sleep -Seconds
                     $schedule_db.Reboot += @{
                         Name = $val.Name
-                        DrainMode = $false
                     }
                     $schedule_db | ConvertTo-Json -Depth 100 | Out-File ".\schedule.json"
                 }
             }
         }
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 60
     }
 }
 ProcessScheduler;

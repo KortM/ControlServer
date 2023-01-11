@@ -27,8 +27,14 @@ function StopSchedule{
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
     $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
+    $status_file_PID = New-Object System.IO.StreamReader{.\Status_PID.txt}
+    $status_pid = $status_file_PID.ReadLine()
+    $status_file_PID.Close()
+    $s_proc = Get-Process | Where-Object {$_.Id -eq $status_pid}
+    Write-Output $s_proc
     try {
         $p_proc.Kill()
+        $s_proc.Kill()
         Write-Host "Schedule running canceled!" -ForegroundColor Yellow
     }
     catch {
@@ -57,7 +63,11 @@ function check_running {
     $schedule_pid =  $file_PID.ReadLine()
     $file_PID.Close()
     $pr = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
-    if ($pr)
+    $status_file_PID = New-Object System.IO.StreamReader{.\Status_PID.txt}
+    $status_pid = $status_file_PID.ReadLine()
+    $status_file_PID.Close()
+    $st = Get-Process | Where-Object {$_.Id -eq $status_pid}
+    if ($pr -and $st)
     {
         return $true
     }else
@@ -75,8 +85,10 @@ function StartSchedule{
     }
     else
     {
-        $schedule_process =  Start-Process powershell -ArgumentList ".\hanlder.ps1" -PassThru -WindowStyle Hidden
+        $schedule_process =  Start-Process powershell -ArgumentList ".\hanlder.ps1" -PassThru #-WindowStyle Hidden
+        $status_process =  Start-Process powershell -ArgumentList ".\check_status.ps1" -PassThru #-WindowStyle Hidden
         Write-Output $schedule_process.Id | Out-File ".\Schedule_PID.txt" 
+        Write-Output $status_process.Id | Out-File ".\Status_PID.txt"
         Write-Host "Schedule state is running" -ForegroundColor Green
     }
 }
@@ -169,13 +181,13 @@ function loop {
     # 
     while ($true) {
         $key = Read-Host "-----------------
-0: Add host to schedule
-1: Delete host from schedule
-2: List Hosts
-3: Status
-4: Start schedule
-5: Stop schedule
-6: Exit
+|0: Add host to schedule |
+|1: Delete host from schedule |
+|2: List Hosts |
+|3: Status |
+|4: Start schedule |
+|5: Stop schedule |
+|6: Exit |
 -----------------
 "
         if ($key -eq 6) {

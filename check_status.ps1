@@ -9,7 +9,7 @@ function Loop {
                 if ($res.TcpTestSucceeded) {
                     #Удалось подключиться на порт
                     Write-Output "Host is UP -> $($val.Name):3389"
-                    if ($val.DrainMode -eq $true){
+                    if ($schedule_db.DrainMode | Where-Object { $_.Name -eq $val.Name }){
                         try {
                             #Включаем DrainMode на хосте
                             Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed Yes -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"
@@ -18,6 +18,7 @@ function Loop {
                         catch {
                             Write-Output "Host is up, but dosn't enable DrainMode"
                         }
+                        $schedule_db.DrainMode = $schedule_db.DrainMode | Where-Object { $_.Name -ne $val.Name }
                     }
                     #Удаляем из списка хостов на перезагрузку
                     $schedule_db.Reboot = $schedule_db.Reboot | Where-Object { $_.Name -ne $val.Name }
