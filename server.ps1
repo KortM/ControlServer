@@ -31,7 +31,6 @@ function StopSchedule{
     $status_pid = $status_file_PID.ReadLine()
     $status_file_PID.Close()
     $s_proc = Get-Process | Where-Object {$_.Id -eq $status_pid}
-    Write-Output $s_proc
     try {
         $p_proc.Kill()
         $s_proc.Kill()
@@ -46,10 +45,17 @@ function Status{
     $file_PID = New-Object System.IO.StreamReader{.\Schedule_PID.txt}
     $schedule_pid = $file_PID.ReadLine()
     $file_PID.Close()
+    $status_file_PID = New-Object System.IO.StreamReader{.\Status_PID.txt}
+    $status_pid = $status_file_PID.ReadLine()
+    $status_file_PID.Close()
     $p_proc = Get-Process | Where-Object {$_.Id -eq $schedule_pid}
+    $s_proc = Get-Process | Where-Object {$_.Id -eq $status_pid}
     if ($p_proc)
     {
-        Write-Host "Shedule is running" -ForegroundColor Green
+        Write-Host "Schedule is running! PID:$($p_proc.Id)."  -ForegroundColor Green
+        Write-Host "Using CPU: $($p_proc.CPU)% RAM: $($p_proc.WorkingSet / 1KB)KB" 
+        Write-Host "Status check service is running! PID:$($s_proc.Id)." -ForegroundColor Green
+        Write-Host "Using CPU: $($s_proc.CPU)% RAM: $($s_proc.WorkingSet / 1KB)KB" 
     }
     else
     {
@@ -117,7 +123,7 @@ function ListHosts {
     Write-Output "*****************" 
     foreach ($val in $hosts)
     {
-        Write-Output $val
+        Write-Output "Domain Name: $($val.Host)`nTimeReboot: $($val.TimeReboot)`nDrainMode:$($val.DrainMode)`nDrainModeTime:$($val.DrainModeTime)`n"
         Write-Output "********************************"
     }
     #$hosts | Format-Table -AutoSize;
@@ -180,23 +186,23 @@ function loop {
     #   Пользовательский интерфейс  
     # 
     while ($true) {
-        $key = Read-Host "-----------------
-|0: Add host to schedule |
-|1: Delete host from schedule |
-|2: List Hosts |
-|3: Status |
-|4: Start schedule |
-|5: Stop schedule |
-|6: Exit |
------------------
+        $key = Read-Host "-------------------------------
+|0: Add host to schedule      |     ######   #    #####
+|1: Delete host from schedule |    ##        #   ##    ##
+|2: List Hosts                |   ##               ##
+|3: Status                    |   ##  ####  ###      ## 
+|4: Start schedule            |   ##    ##  ###       ##    
+|5: Stop schedule             |   ##    ##  ###  ##   ## 
+|6: Exit                      |    ######   ###   #####
+-------------------------------
 "
         if ($key -eq 6) {
             return
         }
         if ($key -eq 0) {
-            $h = Read-Host "Input host domain name: ";
-            $drain = Read-Host "Enable Drain Mode?[Default No] "
-            $time_reboot_day = Read-Host "Time reboot server day of month:"
+            $h = Read-Host "Input host domain name";
+            $drain = Read-Host "Enable Drain Mode?[Default=No]"
+            $time_reboot_day = Read-Host "Time reboot server day of month"
             $time_reboot_hour = Read-Host "Time reboot server hour"
             $time_reboot_minute = Read-Host "Time reboot minute"
             if (($drain -eq "yes") -or ($drain -eq "Yes")) {

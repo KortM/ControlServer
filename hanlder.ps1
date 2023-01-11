@@ -52,7 +52,7 @@ function ProcessScheduler {
                 }
             }
         }
-        Start-Sleep -Seconds 60
+        Start-Sleep -Seconds 30
     }
 }
 ProcessScheduler;

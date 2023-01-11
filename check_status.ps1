@@ -13,12 +13,16 @@ function Loop {
                         try {
                             #Включаем DrainMode на хосте
                             Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed Yes -ConnectionBroker "fs-zud-srv-04.zud.mrg.gazprom.ru"
+                            $schedule_db.DrainMode = $schedule_db.DrainMode | Where-Object { $_.Name -ne $val.Name }
                             #Set-RDSessionHost -SessionHost $val.Name -NewConnectionAllowed Yes -ConnectionBroker "192.168.2.2"
                         }
                         catch {
                             Write-Output "Host is up, but dosn't enable DrainMode"
                         }
-                        $schedule_db.DrainMode = $schedule_db.DrainMode | Where-Object { $_.Name -ne $val.Name }
+                        if ($schedule_db.DrainMode.Count -eq 0)
+                        {
+                            $schedule_db.DrainMode += New-Object string[] 1
+                        }
                     }
                     #Удаляем из списка хостов на перезагрузку
                     $schedule_db.Reboot = $schedule_db.Reboot | Where-Object { $_.Name -ne $val.Name }
